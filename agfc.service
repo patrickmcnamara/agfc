@@ -1,0 +1,10 @@
+[Unit]
+Description=AMD GPU Fan Controller
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/agfc run
+ExecStopPost=/usr/bin/agfc reset
+
+[Install]
+WantedBy=multi-user.target

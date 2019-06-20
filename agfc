@@ -1,0 +1,74 @@
+#!/bin/sh
+
+NAME="agfc"
+TAGLINE="AMD GPU Fan Controller"
+VERSION="0.1.0"
+AUTHOR_NAME="Patrick McNamara"
+AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
+
+FAN_MODE_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/pwm1_enable"
+FAN_SPEED_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/pwm1"
+GPU_TEMP_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/temp1_input"
+
+if [ ! -e "$FAN_MODE_FILE" ]; then
+    echo "agfc: could not find AMDGPU device" >&2
+    exit 1
+fi
+
+if [ "$1" = "run" ]; then
+    # Set manual fan mode
+    echo "1" > "$FAN_MODE_FILE"
+
+    while :; do
+        # Check if fans are still manual and exit if not
+        if [ $(cat "$FAN_MODE_FILE") -ne 1 ]; then
+            echo "agfc: fan mode changed from manual" >&2
+            exit 0
+        fi
+
+        # Get the current GPU temperature
+        CURR_GPU_TEMP=$(expr $(cat "$GPU_TEMP_FILE") / 1000)
+
+        # Decide the right temperature
+        if [ "$CURR_GPU_TEMP" -lt 50 ]; then
+            NEW_FAN_SPEED=0
+        elif [ "$CURR_GPU_TEMP" -lt 65 ]; then
+            NEW_FAN_SPEED=128
+        elif [ "$CURR_GPU_TEMP" -lt 80 ]; then
+            NEW_FAN_SPEED=192
+        else
+            NEW_FAN_SPEED=255
+        fi
+
+        # Set the new fan speed
+        echo "$NEW_FAN_SPEED" > "$FAN_SPEED_FILE"
+
+        # Wait a bit
+        if [ ! -z "$2" ]; then
+            sleep "$2"
+        else
+            sleep 5
+        fi
+    done
+elif [ "$1" = "reset" ]; then
+    # Set manual fan mode
+    echo "2" > "$FAN_MODE_FILE"
+elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    # Print help
+    echo   "NAME:"
+    printf "\t%s - %s\n\n" "$NAME" "$TAGLINE"
+    echo   "VERSION:"
+    printf "\tv%s\n\n" "$VERSION"
+    echo   "AUTHOR:"
+    printf "\t%s <%s>\n\n" "$AUTHOR_NAME" "$AUTHOR_EMAIL"
+    echo   "USAGE:"
+    printf "\t%s <SUBCOMMAND> [OPTION]\n\n" "$NAME"
+    echo   "SUBCOMMANDS:"
+    printf "\t%-16s %s\n" "run [N]" "automatically update fan speed every N seconds, default is 5 seconds"
+    printf "\t%-16s %s\n" "reset" "reset to automatic control of the fan"
+elif [ "$1" = "-v" ] || [ "$1" = "--version" ]; then
+    echo "$NAME v$VERSION"
+else
+    echo "agfc: invalid command, please use -h or --help" >&2
+    exit 1
+fi
