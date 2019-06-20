@@ -2,7 +2,7 @@
 
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.1.0"
+VERSION="0.2.0"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
@@ -15,7 +15,24 @@ if [ ! -e "$FAN_MODE_FILE" ]; then
     exit 1
 fi
 
-if [ "$1" = "run" ]; then
+CURR_FAN_MODE=$(cat "$FAN_MODE_FILE")
+CURR_GPU_TEMP=$(expr $(cat "$GPU_TEMP_FILE") / 1000)
+CURR_FAN_SPEED=$(cat "$FAN_SPEED_FILE")
+
+if [ "$1" = "status" ]; then
+    # Get string fan mode
+    if [ "$CURR_FAN_MODE" -eq 0 ]; then
+        CURR_FAN_MODE_STR="max"
+    elif [ "$CURR_FAN_MODE" -eq 1 ]; then
+        CURR_FAN_MODE_STR="manual"
+    else
+        CURR_FAN_MODE_STR="auto"
+    fi
+    # Print status
+    echo "fan mode: $CURR_FAN_MODE_STR"
+    echo "fan speed: $CURR_FAN_SPEED / 255"
+    echo "temperature: $CURR_GPU_TEMP C"
+elif [ "$1" = "run" ]; then
     # Set manual fan mode
     echo "1" > "$FAN_MODE_FILE"
 
@@ -63,9 +80,15 @@ elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     printf "\t%s <%s>\n\n" "$AUTHOR_NAME" "$AUTHOR_EMAIL"
     echo   "USAGE:"
     printf "\t%s <SUBCOMMAND> [OPTION]\n\n" "$NAME"
+    echo   "FLAGS:"
+    printf "\t%-16s %s\n"   "-h, --help"    "show help and exit"
+    printf "\t%-16s %s\n\n" "-v, --version" "show version and exit"
     echo   "SUBCOMMANDS:"
-    printf "\t%-16s %s\n" "run [N]" "automatically update fan speed every N seconds, default is 5 seconds"
-    printf "\t%-16s %s\n" "reset" "reset to automatic control of the fan"
+    printf "\t%-16s %s\n"   "status"  "print the current status"
+    printf "\t%-16s %s\n"   "run [N]" "automatically update fan speed every N seconds, default is 5 seconds"
+    printf "\t%-16s %s\n\n" "reset"   "reset to automatic control of the fan"
+    echo   "OTHER:"
+    printf "\tThis command shouldn't be run directly for the moment. Please use the systemd service file provided instead.\n"
 elif [ "$1" = "-v" ] || [ "$1" = "--version" ]; then
     echo "$NAME v$VERSION"
 else
