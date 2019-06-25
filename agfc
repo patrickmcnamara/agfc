@@ -2,7 +2,7 @@
 
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.2.0"
+VERSION="0.3.0"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
@@ -28,6 +28,7 @@ if [ "$1" = "status" ]; then
     else
         CURR_FAN_MODE_STR="auto"
     fi
+
     # Print status
     echo "fan mode: $CURR_FAN_MODE_STR"
     echo "fan speed: $CURR_FAN_SPEED / 255"
@@ -49,8 +50,10 @@ elif [ "$1" = "run" ]; then
         # Decide the right temperature
         if [ "$CURR_GPU_TEMP" -lt 50 ]; then
             NEW_FAN_SPEED=0
-        elif [ "$CURR_GPU_TEMP" -lt 65 ]; then
+        if [ "$CURR_GPU_TEMP" -lt 60 ]; then
             NEW_FAN_SPEED=128
+        elif [ "$CURR_GPU_TEMP" -lt 70 ]; then
+            NEW_FAN_SPEED=160
         elif [ "$CURR_GPU_TEMP" -lt 80 ]; then
             NEW_FAN_SPEED=192
         else
