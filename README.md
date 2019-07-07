@@ -9,10 +9,3 @@ There is a script `agfc` and a systemd service file `agfc.service`. Place them i
 ## Usage
 
 Enable the systemd service file with `systemctl enable agfc.service`. I don't recommend running `agfc` directly, at least yet.
-
-## Exit codes
-
-| Exit Code | Reason                        |
-|-----------|-------------------------------|
-|         0 | Successfully exited.          |
-|         1 | No AMDGPU driver found.       |
