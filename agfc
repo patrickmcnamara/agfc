@@ -30,11 +30,11 @@ status() {
     fi
 
     # Print status
-    echo   "$NAME v$VERSION"
-    printf "%-16s %s\n" "running:" "$CURR_RUNNING_STATUS"
-    printf "%-16s %s\n" "fan mode:" "$CURR_FAN_MODE_STR"
-    printf "%-16s %s\n" "fan speed:" "$CURR_FAN_SPEED / 255"
-    printf "%-16s %s\n" "temperature:" "$CURR_GPU_TEMP C"
+    printf "%-20s %s\n" "$NAME version:" "$VERSION"
+    printf "%-20s %s\n" "$NAME running:" "$CURR_RUNNING_STATUS"
+    printf "%-20s %s\n" "gpu fan mode:" "$CURR_FAN_MODE_STR"
+    printf "%-20s %s\n" "gpu fan speed:" "$CURR_FAN_SPEED / 255"
+    printf "%-20s %s\n" "gpu temperature:" "$CURR_GPU_TEMP C"
 }
 
 run() {
