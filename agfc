@@ -3,7 +3,7 @@
 # agfc information
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.4.2"
+VERSION="0.4.3"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
@@ -39,7 +39,7 @@ status() {
 
 run() {
     # Check if agfc is already running
-    if [ -n "$CURR_RUNNING_PID" ]; then
+    if [ ! "$CURR_RUNNING_PID" = "$$" ]; then
         error "already running with PID of $CURR_RUNNING_PID"
     fi
 
@@ -132,7 +132,7 @@ if [ "$1" = "status" ]; then
 elif [ "$1" = "run" ]; then
     run "$2"
 elif [ "$1" = "reset" ]; then
-    autoFanMode
+    setFanMode "1"
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     printHelp
 elif [ "$1" = "-v" ] || [ "$1" = "--version" ]; then
