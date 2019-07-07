@@ -1,25 +1,18 @@
 #!/bin/sh
 
+# agfc information
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.4.1"
+VERSION="0.4.2"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
+# AMDGPU files
 FAN_MODE_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/pwm1_enable"
 FAN_SPEED_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/pwm1"
 GPU_TEMP_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/temp1_input"
 
-if [ ! -e "$FAN_MODE_FILE" ]; then
-    echo "agfc: could not find AMDGPU device" >&2
-    exit 1
-fi
-
-CURR_FAN_MODE=$(cat "$FAN_MODE_FILE")
-CURR_GPU_TEMP=$(expr $(cat "$GPU_TEMP_FILE") / 1000)
-CURR_FAN_SPEED=$(cat "$FAN_SPEED_FILE")
-
-if [ "$1" = "status" ]; then
+status() {
     # Get string fan mode
     if [ "$CURR_FAN_MODE" -eq 0 ]; then
         CURR_FAN_MODE_STR="max"
@@ -29,17 +22,38 @@ if [ "$1" = "status" ]; then
         CURR_FAN_MODE_STR="auto"
     fi
 
+    # Get agfc running status
+    if [ -n "$CURR_RUNNING_PID" ]; then
+        CURR_RUNNING_STATUS="yes"
+    else
+        CURR_RUNNING_STATUS="no"
+    fi
+
     # Print status
-    echo "fan mode: $CURR_FAN_MODE_STR"
-    echo "fan speed: $CURR_FAN_SPEED / 255"
-    echo "temperature: $CURR_GPU_TEMP C"
-elif [ "$1" = "run" ]; then
+    echo   "$NAME v$VERSION"
+    printf "%-16s %s\n" "running:" "$CURR_RUNNING_STATUS"
+    printf "%-16s %s\n" "fan mode:" "$CURR_FAN_MODE_STR"
+    printf "%-16s %s\n" "fan speed:" "$CURR_FAN_SPEED / 255"
+    printf "%-16s %s\n" "temperature:" "$CURR_GPU_TEMP C"
+}
+
+run() {
+    # Check if agfc is already running
+    if [ -n "$CURR_RUNNING_PID" ]; then
+        error "already running with PID of $CURR_RUNNING_PID"
+    fi
+
+    # Check if running as root
+    if [ ! "$(whoami)" = "root" ]; then
+        error "run command must be run as root"
+    fi
+
     while :; do
         # Set manual fan mode
-        echo "1" > "$FAN_MODE_FILE"
+        setFanMode "1"
 
         # Get the current GPU temperature
-        CURR_GPU_TEMP=$(expr $(cat "$GPU_TEMP_FILE") / 1000)
+        CURR_GPU_TEMP=$(("$(cat "$GPU_TEMP_FILE")" / 1000))
 
         # Decide the right temperature
         if [ "$CURR_GPU_TEMP" -lt 40 ]; then
@@ -60,17 +74,24 @@ elif [ "$1" = "run" ]; then
         echo "$NEW_FAN_SPEED" > "$FAN_SPEED_FILE"
 
         # Wait a bit
-        if [ ! -z "$2" ]; then
-            sleep "$2"
+        if [ -n "$1" ]; then
+            sleep "$1"
         else
             sleep 5
         fi
     done
-elif [ "$1" = "reset" ]; then
-    # Set manual fan mode
-    echo "2" > "$FAN_MODE_FILE"
-elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    # Print help
+}
+
+error() {
+    echo "$NAME:" "$1" >&2
+    exit 1
+}
+
+setFanMode() {
+    echo "$1" > "$FAN_MODE_FILE"
+}
+
+printHelp() {
     echo   "NAME:"
     printf "\t%s - %s\n\n" "$NAME" "$TAGLINE"
     echo   "VERSION:"
@@ -83,14 +104,39 @@ elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     printf "\t%-16s %s\n"   "-h, --help"    "show help and exit"
     printf "\t%-16s %s\n\n" "-v, --version" "show version and exit"
     echo   "SUBCOMMANDS:"
-    printf "\t%-16s %s\n"   "status"  "print the current status"
+    printf "\t%-16s %s\n"   "status"  "print the current status of $NAME and GPU"
     printf "\t%-16s %s\n"   "run [N]" "automatically update fan speed every N seconds, default is 5 seconds"
     printf "\t%-16s %s\n\n" "reset"   "reset to automatic control of the fan"
     echo   "OTHER:"
     printf "\tThis command shouldn't be run directly for the moment. Please use the systemd service file provided instead.\n"
-elif [ "$1" = "-v" ] || [ "$1" = "--version" ]; then
+}
+
+printVersion() {
     echo "$NAME v$VERSION"
+}
+
+# Check if AMDGPU device is present
+if [ ! -e "$FAN_MODE_FILE" ]; then
+    error "could not find AMDGPU device"
+fi
+
+# agfc and AMGPU status information
+CURR_FAN_MODE=$(cat "$FAN_MODE_FILE")
+CURR_GPU_TEMP=$(("$(cat "$GPU_TEMP_FILE")" / 1000))
+CURR_FAN_SPEED=$(cat "$FAN_SPEED_FILE")
+CURR_RUNNING_PID=$(pgrep "$NAME" | head -n 1)
+
+# Choose which command to run
+if [ "$1" = "status" ]; then
+    status
+elif [ "$1" = "run" ]; then
+    run "$2"
+elif [ "$1" = "reset" ]; then
+    autoFanMode
+elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    printHelp
+elif [ "$1" = "-v" ] || [ "$1" = "--version" ]; then
+    printVersion
 else
-    echo "agfc: invalid command, please use -h or --help" >&2
-    exit 1
+    error "invalid command, please use -h or --help"
 fi
