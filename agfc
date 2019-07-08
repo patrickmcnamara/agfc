@@ -3,7 +3,7 @@
 # agfc information
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.4.3"
+VERSION="0.4.4"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
@@ -30,10 +30,10 @@ status() {
     fi
 
     # Print status
-    printf "%-20s %s\n" "$NAME version:" "$VERSION"
-    printf "%-20s %s\n" "$NAME running:" "$CURR_RUNNING_STATUS"
-    printf "%-20s %s\n" "gpu fan mode:" "$CURR_FAN_MODE_STR"
-    printf "%-20s %s\n" "gpu fan speed:" "$CURR_FAN_SPEED / 255"
+    printf "%-20s %s\n" "$NAME version:"   "$VERSION"
+    printf "%-20s %s\n" "$NAME running:"   "$CURR_RUNNING_STATUS"
+    printf "%-20s %s\n" "gpu fan mode:"    "$CURR_FAN_MODE_STR"
+    printf "%-20s %s\n" "gpu fan speed:"   "$CURR_FAN_SPEED / 255"
     printf "%-20s %s\n" "gpu temperature:" "$CURR_GPU_TEMP C"
 }
 
@@ -92,23 +92,29 @@ setFanMode() {
 }
 
 printHelp() {
-    echo   "NAME:"
-    printf "\t%s - %s\n\n" "$NAME" "$TAGLINE"
-    echo   "VERSION:"
-    printf "\tv%s\n\n" "$VERSION"
-    echo   "AUTHOR:"
-    printf "\t%s <%s>\n\n" "$AUTHOR_NAME" "$AUTHOR_EMAIL"
-    echo   "USAGE:"
-    printf "\t%s <SUBCOMMAND> [OPTION]\n\n" "$NAME"
-    echo   "FLAGS:"
-    printf "\t%-16s %s\n"   "-h, --help"    "show help and exit"
-    printf "\t%-16s %s\n\n" "-v, --version" "show version and exit"
-    echo   "SUBCOMMANDS:"
-    printf "\t%-16s %s\n"   "status"  "print the current status of $NAME and GPU"
-    printf "\t%-16s %s\n"   "run [N]" "automatically update fan speed every N seconds, default is 5 seconds"
-    printf "\t%-16s %s\n\n" "reset"   "reset to automatic control of the fan"
-    echo   "OTHER:"
-    printf "\tThis command shouldn't be run directly for the moment. Please use the systemd service file provided instead.\n"
+    echo "NAME:"
+    echo "    $NAME - $TAGLINE"
+    echo
+    echo "VERSION:"
+    echo "    v$VERSION"
+    echo
+    echo "AUTHOR:"
+    echo "    $AUTHOR_NAME <$AUTHOR_EMAIL>"
+    echo
+    echo "USAGE:"
+    echo "    $NAME <SUBCOMMAND> [OPTION]"
+    echo
+    echo "FLAGS:"
+    echo "    -h, --help       show help and exit"
+    echo "    -v, --version    show version and exit"
+    echo
+    echo "SUBCOMMANDS:"
+    echo "    status     print the current status of $NAME and GPU"
+    echo "    run [N]    automatically update fan speed every N seconds, default is 5 seconds"
+    echo "    reset      reset to automatic control of the fan"
+    echo
+    echo "OTHER:"
+    echo "    This command shouldn't be run directly for the moment. Please use the systemd service file provided instead."
 }
 
 printVersion() {
