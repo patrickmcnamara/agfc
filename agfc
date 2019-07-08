@@ -23,7 +23,7 @@ status() {
     fi
 
     # Get agfc running status
-    if [ -n "$CURR_RUNNING_PID" ]; then
+    if [ ! "$CURR_RUNNING_PID" = "$$" ]; then
         CURR_RUNNING_STATUS="yes"
     else
         CURR_RUNNING_STATUS="no"
