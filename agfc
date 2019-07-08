@@ -66,11 +66,11 @@ status() {
     fi
 
     # Print status
-    printf "%-20s %s\n" "$NAME version:"   "$VERSION"
-    printf "%-20s %s\n" "$NAME running:"   "$CURR_RUNNING_STATUS"
-    printf "%-20s %s\n" "gpu fan mode:"    "$CURR_FAN_MODE_STR"
-    printf "%-20s %s\n" "gpu fan speed:"   "$CURR_FAN_SPEED / 255"
-    printf "%-20s %s\n" "gpu temperature:" "$CURR_GPU_TEMP C"
+    printf "%-19s %s\n" "$NAME version:"   "$VERSION"
+    printf "%-19s %s\n" "$NAME running:"   "$CURR_RUNNING_STATUS"
+    printf "%-19s %s\n" "gpu fan mode:"    "$CURR_FAN_MODE_STR"
+    printf "%-19s %s\n" "gpu fan speed:"   "$CURR_FAN_SPEED / 255"
+    printf "%-19s %s\n" "gpu temperature:" "$CURR_GPU_TEMP C"
 }
 
 run() {
