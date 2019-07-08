@@ -5,7 +5,7 @@
 # agfc information
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.5.0"
+VERSION="0.6.0"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
@@ -34,9 +34,10 @@ help() {
     echo "    -v, --version    show version and exit"
     echo
     echo "SUBCOMMANDS:"
-    echo "    status    print the current status of $NAME and GPU"
-    echo "    run       automatically update fan speed based on hardcoded curve, needs root"
-    echo "    reset     reset to automatic control of the fan, needs root"
+    echo "    status [value]   print the current status of $NAME and GPU, or just one item"
+    echo "                     value can be version, running, mode, speed, temperature/temp"
+    echo "    run              automatically update fan speed based on hardcoded curve, needs root"
+    echo "    reset            reset to automatic control of the fan, needs root"
     echo
     echo "OTHER:"
     echo "    This command shouldn't be run directly for the moment. Please use the systemd service file provided instead."
@@ -65,12 +66,27 @@ status() {
         CURR_RUNNING_STATUS="no"
     fi
 
+    CURR_FAN_SPEED_STR=$(($CURR_FAN_SPEED * 100 / 255))
+    CURR_GPU_TEMP_STR="$CURR_GPU_TEMP°C"
+
     # Print status
-    printf "%-19s %s\n" "$NAME version:"   "$VERSION"
-    printf "%-19s %s\n" "$NAME running:"   "$CURR_RUNNING_STATUS"
-    printf "%-19s %s\n" "gpu fan mode:"    "$CURR_FAN_MODE_STR"
-    printf "%-19s %s\n" "gpu fan speed:"   "$CURR_FAN_SPEED / 255"
-    printf "%-19s %s\n" "gpu temperature:" "$CURR_GPU_TEMP C"
+    if [ -z "$1" ]; then
+        printf "%-19s %s\n" "$NAME version:"   "$VERSION"
+        printf "%-19s %s\n" "$NAME running:"   "$CURR_RUNNING_STATUS"
+        printf "%-19s %s\n" "gpu fan mode:"    "$CURR_FAN_MODE_STR"
+        printf "%-19s %s\n" "gpu fan speed:"   "$CURR_FAN_SPEED_STR"
+        printf "%-19s %s\n" "gpu temperature:" "$CURR_GPU_TEMP_STR"
+    elif [ "$1" = "version" ]; then
+        echo "$VERSION"
+    elif [ "$1" = "running" ]; then
+        echo "$CURR_RUNNING_STATUS"
+    elif [ "$1" = "mode" ]; then
+        echo "$CURR_FAN_MODE_STR"
+    elif [ "$1" = "speed" ]; then
+        echo "$CURR_FAN_SPEED"
+    elif [ "$1" = "temperature" ] || [ "$1" = "temp" ]; then
+        echo "$CURR_GPU_TEMP"
+    fi
 }
 
 run() {
@@ -148,7 +164,7 @@ CURR_RUNNING_PID=$(pgrep "$NAME" | head -n 1)
 
 # Choose which command to run
 if [ "$1" = "status" ]; then
-    status
+    status $2
 elif [ "$1" = "run" ]; then
     run
 elif [ "$1" = "reset" ]; then
