@@ -1,9 +1,11 @@
 #!/bin/sh
 
+### SETUP
+
 # agfc information
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.4.4"
+VERSION="0.5.0"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
@@ -11,6 +13,40 @@ AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 FAN_MODE_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/pwm1_enable"
 FAN_SPEED_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/pwm1"
 GPU_TEMP_FILE="/sys/class/drm/card0/device/hwmon/hwmon0/temp1_input"
+
+### FLAGS
+
+help() {
+    echo "NAME:"
+    echo "    $NAME - $TAGLINE"
+    echo
+    echo "VERSION:"
+    echo "    v$VERSION"
+    echo
+    echo "AUTHOR:"
+    echo "    $AUTHOR_NAME <$AUTHOR_EMAIL>"
+    echo
+    echo "USAGE:"
+    echo "    $NAME <SUBCOMMAND> [OPTION]"
+    echo
+    echo "FLAGS:"
+    echo "    -h, --help       show help and exit"
+    echo "    -v, --version    show version and exit"
+    echo
+    echo "SUBCOMMANDS:"
+    echo "    status    print the current status of $NAME and GPU"
+    echo "    run       automatically update fan speed based on hardcoded curve, needs root"
+    echo "    reset     reset to automatic control of the fan, needs root"
+    echo
+    echo "OTHER:"
+    echo "    This command shouldn't be run directly for the moment. Please use the systemd service file provided instead."
+}
+
+version() {
+    echo "$NAME v$VERSION"
+}
+
+### COMMANDS
 
 status() {
     # Get string fan mode
@@ -39,9 +75,7 @@ status() {
 
 run() {
     # Check if agfc is already running
-    if [ ! "$CURR_RUNNING_PID" = "$$" ]; then
-        error "already running with PID of $CURR_RUNNING_PID"
-    fi
+    runAsRoot "run"
 
     # Check if running as root
     if [ ! "$(whoami)" = "root" ]; then
@@ -50,10 +84,10 @@ run() {
 
     while :; do
         # Set manual fan mode
-        setFanMode "1"
+        echo "1" > "$FAN_MODE_FILE"
 
         # Get the current GPU temperature
-        CURR_GPU_TEMP=$(("$(cat "$GPU_TEMP_FILE")" / 1000))
+        CURR_GPU_TEMP=$(($(cat "$GPU_TEMP_FILE") / 1000))
 
         # Decide the right temperature
         if [ "$CURR_GPU_TEMP" -lt 40 ]; then
@@ -73,53 +107,33 @@ run() {
         # Set the new fan speed
         echo "$NEW_FAN_SPEED" > "$FAN_SPEED_FILE"
 
-        # Wait a bit
-        if [ -n "$1" ]; then
-            sleep "$1"
-        else
-            sleep 5
-        fi
+        # Wait five seconds
+        sleep 5
     done
 }
+
+reset() {
+    # Check if running as root
+    runAsRoot "reset"
+
+    # Set fan mode to auto
+    echo "2" > "$FAN_MODE_FILE"
+}
+
+### HELPERS
 
 error() {
     echo "$NAME:" "$1" >&2
     exit 1
 }
 
-setFanMode() {
-    echo "$1" > "$FAN_MODE_FILE"
+runAsRoot() {
+    if [ ! "$(whoami)" = "root" ]; then
+        error "$1 command must be run as root"
+    fi
 }
 
-printHelp() {
-    echo "NAME:"
-    echo "    $NAME - $TAGLINE"
-    echo
-    echo "VERSION:"
-    echo "    v$VERSION"
-    echo
-    echo "AUTHOR:"
-    echo "    $AUTHOR_NAME <$AUTHOR_EMAIL>"
-    echo
-    echo "USAGE:"
-    echo "    $NAME <SUBCOMMAND> [OPTION]"
-    echo
-    echo "FLAGS:"
-    echo "    -h, --help       show help and exit"
-    echo "    -v, --version    show version and exit"
-    echo
-    echo "SUBCOMMANDS:"
-    echo "    status     print the current status of $NAME and GPU"
-    echo "    run [N]    automatically update fan speed every N seconds, default is 5 seconds"
-    echo "    reset      reset to automatic control of the fan"
-    echo
-    echo "OTHER:"
-    echo "    This command shouldn't be run directly for the moment. Please use the systemd service file provided instead."
-}
-
-printVersion() {
-    echo "$NAME v$VERSION"
-}
+### MAIN
 
 # Check if AMDGPU device is present
 if [ ! -e "$FAN_MODE_FILE" ]; then
@@ -128,7 +142,7 @@ fi
 
 # agfc and AMGPU status information
 CURR_FAN_MODE=$(cat "$FAN_MODE_FILE")
-CURR_GPU_TEMP=$(("$(cat "$GPU_TEMP_FILE")" / 1000))
+CURR_GPU_TEMP=$(($(cat "$GPU_TEMP_FILE") / 1000))
 CURR_FAN_SPEED=$(cat "$FAN_SPEED_FILE")
 CURR_RUNNING_PID=$(pgrep "$NAME" | head -n 1)
 
@@ -136,13 +150,13 @@ CURR_RUNNING_PID=$(pgrep "$NAME" | head -n 1)
 if [ "$1" = "status" ]; then
     status
 elif [ "$1" = "run" ]; then
-    run "$2"
+    run
 elif [ "$1" = "reset" ]; then
-    setFanMode "1"
+    reset
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    printHelp
+    help
 elif [ "$1" = "-v" ] || [ "$1" = "--version" ]; then
-    printVersion
+    version
 else
     error "invalid command, please use -h or --help"
 fi
