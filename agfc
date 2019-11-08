@@ -5,7 +5,7 @@
 # agfc information
 NAME="agfc"
 TAGLINE="AMD GPU Fan Controller"
-VERSION="0.6.0"
+VERSION="0.7.0"
 AUTHOR_NAME="Patrick McNamara"
 AUTHOR_EMAIL="hello@patrickmcnamara.xyz"
 
@@ -80,6 +80,9 @@ status() {
         echo "$VERSION"
     elif [ "$1" = "running" ]; then
         echo "$CURR_RUNNING_STATUS"
+        if [ "$CURR_RUNNING_STATUS" = "no" ]; then
+            (exit 1)
+        fi
     elif [ "$1" = "mode" ]; then
         echo "$CURR_FAN_MODE_STR"
     elif [ "$1" = "speed" ]; then
