@@ -94,12 +94,12 @@ status() {
 
 run() {
     # Check if agfc is already running
-    runAsRoot "run"
+    if [ ! "$CURR_RUNNING_PID" = "$$" ]; then
+        error "already running with PID of $CURR_RUNNING_PID"
+    fi
 
     # Check if running as root
-    if [ ! "$(whoami)" = "root" ]; then
-        error "run command must be run as root"
-    fi
+    runAsRoot "run"
 
     while :; do
         # Set manual fan mode
