@@ -50,6 +50,11 @@ version() {
 ### COMMANDS
 
 status() {
+    # Status information
+    CURR_FAN_MODE=$(cat "$FAN_MODE_FILE")
+    CURR_GPU_TEMP=$(($(cat "$GPU_TEMP_FILE") / 1000))
+    CURR_FAN_SPEED=$(cat "$FAN_SPEED_FILE")
+
     # Get string fan mode
     if [ "$CURR_FAN_MODE" -eq 0 ]; then
         CURR_FAN_MODE_STR="max"
@@ -105,8 +110,9 @@ run() {
         # Set manual fan mode
         echo "1" > "$FAN_MODE_FILE"
 
-        # Get the current GPU temperature
+        # Get the current GPU temperature and fan speed
         CURR_GPU_TEMP=$(($(cat "$GPU_TEMP_FILE") / 1000))
+        CURR_FAN_SPEED=$(cat "$FAN_SPEED_FILE")
 
         # Decide the right temperature
         if [ "$CURR_GPU_TEMP" -lt 40 ]; then
@@ -126,8 +132,12 @@ run() {
         # Set the new fan speed
         echo "$NEW_FAN_SPEED" > "$FAN_SPEED_FILE"
 
-        # Wait five seconds
-        sleep 5
+        # Wait
+        if [ "$CURR_FAN_SPEED" != "$NEW_FAN_SPEED" ]; then
+            sleep 30
+        else
+            sleep 5
+        fi
     done
 }
 
@@ -159,10 +169,7 @@ if [ ! -e "$FAN_MODE_FILE" ]; then
     error "could not find AMDGPU device"
 fi
 
-# agfc and AMGPU status information
-CURR_FAN_MODE=$(cat "$FAN_MODE_FILE")
-CURR_GPU_TEMP=$(($(cat "$GPU_TEMP_FILE") / 1000))
-CURR_FAN_SPEED=$(cat "$FAN_SPEED_FILE")
+# Get PID of first instance of `agfc`
 CURR_RUNNING_PID=$(pgrep "$NAME" | head -n 1)
 
 # Choose which command to run
